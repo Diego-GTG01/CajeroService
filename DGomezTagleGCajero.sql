@@ -186,6 +186,17 @@ FROM CUENTA C
 JOIN USUARIO U ON C.idUsuario = U.idUsuario
 JOIN BANCO B ON C.idBanco = B.idBanco;
 
+//3
+SELECT 
+    C.idCajero,
+    C.ubicacion AS Cajero,
+    SUM(D.denominacion * DC.cantidadDisponible) AS Dinero_Total_Disponible
+FROM DetalleCajero DC
+JOIN CAJERO C ON DC.idcajero = C.idCajero
+JOIN DENOMINACION D ON DC.idDenominacion = D.idDenominacion
+GROUP BY C.idCajero, C.ubicacion
+ORDER BY C.idCajero;
+
 //2
 SELECT 
     T.idTransaccion AS Folio,
