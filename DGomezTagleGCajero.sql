@@ -99,9 +99,6 @@ CREATE TABLE DETALLETRANSACCION(
 );
 
 
-
-
-
 //datos de prueba
 
 
@@ -131,17 +128,17 @@ INSERT INTO DENOMINACION (tipo, denominacion) VALUES ('Billete', 1000);
 -- Cajeros
 INSERT INTO CAJERO (ubicacion, estado) VALUES ('Centro Comercial Plaza', 'Activo');
 INSERT INTO CAJERO (ubicacion, estado) VALUES ('Sucursal Avenida Central', 'Activo');
+INSERT INTO CAJERO (ubicacion, estado) VALUES ('Sucursal Calle Reforma', 'Activo');
 
 -- Bancos
 INSERT INTO BANCO (nombre) VALUES ('Banco Alfa');
 INSERT INTO BANCO (nombre) VALUES ('Banco Beta');
 
-
-
-
 -- Cuentas (Carlos en Banco Alfa, Ana en Banco Beta)
 INSERT INTO CUENTA (idUsuario, idBanco, NumCuenta, saldo) VALUES (1, 1, 123456789, 25000);
 INSERT INTO CUENTA (idUsuario, idBanco, NumCuenta, saldo) VALUES (2, 2, 987654321, 8500);
+
+UPDATE CUENTA SET saldo = 50000 WHERE NumCuenta = 123456789;
 
 -- Tarjetas (Ligadas a los usuarios, rangos y bancos correspondientes)
 INSERT INTO TARJETA (idUsuario, idRango, idBanco, NumTarjeta, pin, fechaVencimiento, STATUS) 
@@ -165,6 +162,18 @@ INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES 
 INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (2, 6, 200); -- 500 billetes de 100
 INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (2, 5, 300); -- 300 billetes de 200
 INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (2, 4, 100); -- 200 billetes de 500
+-- Detalle del Cajero (Billetes cargados en el Cajero 3)
+INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (3, 17, 2); -- 500 billetes de 100
+INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (3, 3, 5); -- 300 billetes de 200
+INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (3, 2, 10); -- 200 billetes de 500
+INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (3, 1, 20); -- 500 billetes de 100
+INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (3, 10, 30); -- 300 billetes de 200
+INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (3, 9, 40); -- 200 billetes de 500
+INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (3, 8, 50); -- 300 billetes de 200
+INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (3, 7, 100); -- 200 billetes de 500
+INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (3, 6, 200); -- 500 billetes de 100
+INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (3, 5, 300); -- 300 billetes de 200
+INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (3, 4, 100); -- 200 billetes de 500
 
 -- Transacciones (Carlos retira 700 pesos en el Cajero 1 el d�a de hoy)
 INSERT INTO TRANSACCION (idTarjeta, idCajero, monto, fecha, estado) 
@@ -176,7 +185,7 @@ INSERT INTO DETALLETRANSACCION (idTransaccion, idDenominacion, CantidadEntregada
 
 
 //consultas de prueba 
-//1
+//Saldo disponible del usuario
 SELECT 
     U.nombre || ' ' || U.apellidoPaterno AS Cliente,
     B.nombre AS Banco,
@@ -186,7 +195,7 @@ FROM CUENTA C
 JOIN USUARIO U ON C.idUsuario = U.idUsuario
 JOIN BANCO B ON C.idBanco = B.idBanco;
 
-//3
+//dinero total de cada cajero
 SELECT 
     C.idCajero,
     C.ubicacion AS Cajero,
@@ -197,7 +206,7 @@ JOIN DENOMINACION D ON DC.idDenominacion = D.idDenominacion
 GROUP BY C.idCajero, C.ubicacion
 ORDER BY C.idCajero;
 
-//2
+//transaccion dinero retirado
 SELECT 
     T.idTransaccion AS Folio,
     U.nombre || ' ' || U.apellidoPaterno AS Cliente,
@@ -223,7 +232,7 @@ FROM DETALLETRANSACCION DT
 JOIN DENOMINACION D ON DT.idDenominacion = D.idDenominacion
 WHERE DT.idTransaccion = 2;
 
-//4
+//total billetes 
 
 SELECT 
     C.ubicacion AS Cajero,
@@ -235,23 +244,12 @@ JOIN CAJERO C ON DC.idcajero = C.idCajero
 JOIN DENOMINACION D ON DC.idDenominacion = D.idDenominacion
 ORDER BY C.ubicacion, D.denominacion DESC;
 
-
-
-
-
-
-
-
-
-
-
-
-
 //stored procedure
-CREATE OR REPLACE PROCEDURE PR_REALIZAR_RETIRO (
-    p_idTarjeta  IN NUMBER,
-    p_idCajero   IN NUMBER,
-    p_monto      IN NUMBER
+CREATE OR REPLACE PROCEDURE RetiroSP (
+    p_idTarjeta   IN NUMBER,
+    p_idCajero    IN NUMBER,
+    p_monto       IN NUMBER,
+    p_resultado   OUT SYS_REFCURSOR
 ) AS
     v_idUsuario       NUMBER;
     v_saldoActual     NUMBER;
@@ -261,7 +259,6 @@ CREATE OR REPLACE PROCEDURE PR_REALIZAR_RETIRO (
     v_montoRestante   NUMBER;
     v_piezasEntregar  NUMBER;
     
-    -- Cursor para recorrer las denominaciones disponibles en ESTE cajero ordenadas de MAYOR a MENOR
     CURSOR c_denominaciones IS
         SELECT dc.idDenominacion, d.denominacion, dc.cantidadDisponible
         FROM DetalleCajero dc
@@ -269,24 +266,23 @@ CREATE OR REPLACE PROCEDURE PR_REALIZAR_RETIRO (
         WHERE dc.idcajero = p_idCajero AND dc.cantidadDisponible > 0
         ORDER BY d.denominacion DESC;
 
-    -- Excepciones personalizadas
     EXC_FONDOS_INSUFICIENTES EXCEPTION;
     EXC_LIMITES_RANGO        EXCEPTION;
     EXC_SIN_EFECTIVO_CAJERO  EXCEPTION;
 BEGIN
-    -- 1. VALIDACI�N: Obtener datos de la tarjeta y l�mites de retiro del rango
+    -- Obtener datos de la tarjeta
     SELECT t.idUsuario, r.minRetiro, r.maxRetiro
     INTO v_idUsuario, v_minRetiro, v_maxRetiro
     FROM TARJETA t
     JOIN RANGO r ON t.idRango = r.idRango
     WHERE t.idTarjeta = p_idTarjeta AND t.STATUS = 1;
 
-    -- 2. VALIDACI�N: Verificar l�mites permitidos por su Rango
-    IF p_monto < v_minRetiro OR p_monto > v_maxRetiro THEN
+    -- Verificar límites de la tarjeta 
+    IF p_monto <= v_minRetiro OR p_monto >= v_maxRetiro THEN
         RAISE EXC_LIMITES_RANGO;
     END IF;
 
-    -- 3. VALIDACI�N: Verificar saldo en la cuenta del usuario
+    --Verificar saldo del usuario
     SELECT saldo INTO v_saldoActual
     FROM CUENTA
     WHERE idUsuario = v_idUsuario;
@@ -295,77 +291,87 @@ BEGIN
         RAISE EXC_FONDOS_INSUFICIENTES;
     END IF;
 
-    -- 4. PROCESO PRINCIPAL: Registrar la transacci�n inicial (como pendiente/proceso: estado 0)
+    --Registrar la transacción inicial
     INSERT INTO TRANSACCION (idTarjeta, idCajero, monto, fecha, estado)
     VALUES (p_idTarjeta, p_idCajero, p_monto, SYSDATE, 0)
     RETURNING idTransaccion INTO v_idTransaccion;
 
-    -- 5. ALGORITMO DE DESGLOSE DE EFECTIVO
+    -- ALGORITMO DE DESGLOSE DE EFECTIVO
     v_montoRestante := p_monto;
-    
-    DBMS_OUTPUT.PUT_LINE('--- DESGLOSE DE EFECTIVO ENTREGADO ---');
     
     FOR rec IN c_denominaciones LOOP
         IF v_montoRestante >= rec.denominacion THEN
-            -- Calcular cu�ntas piezas te�ricas se necesitan
             v_piezasEntregar := TRUNC(v_montoRestante / rec.denominacion);
             
-            -- Si el cajero no tiene suficientes piezas de esta denominaci�n, toma todas las que tenga
             IF v_piezasEntregar > rec.cantidadDisponible THEN
                 v_piezasEntregar := rec.cantidadDisponible;
             END IF;
             
             IF v_piezasEntregar > 0 THEN
-                -- Insertar en el detalle de la transacci�n
                 INSERT INTO DETALLETRANSACCION (idTransaccion, idDenominacion, CantidadEntregada)
                 VALUES (v_idTransaccion, rec.idDenominacion, v_piezasEntregar);
                 
-                -- Actualizar el inventario del cajero autom�tico
                 UPDATE DetalleCajero
                 SET cantidadDisponible = cantidadDisponible - v_piezasEntregar
                 WHERE idcajero = p_idCajero AND idDenominacion = rec.idDenominacion;
                 
-                DBMS_OUTPUT.PUT_LINE('Entregado: ' || v_piezasEntregar || ' de $' || rec.denominacion);
-                
-                -- Restar del monto pendiente
                 v_montoRestante := v_montoRestante - (v_piezasEntregar * rec.denominacion);
             END IF;
         END IF;
     END LOOP;
 
-    -- 6. VALIDACI�N FINAL: �El cajero pudo completar el monto exacto solicitado?
+    -- VALIDACIÓN FINAL DE SALDO DEL CAJERO 
     IF v_montoRestante > 0 THEN
-        -- Si qued� un remanente, significa que el cajero no tiene combinaciones o efectivo suficiente
         RAISE EXC_SIN_EFECTIVO_CAJERO;
     END IF;
 
-    -- 7. FINALIZACI�N EXITOSA: Restar dinero de la cuenta del usuario y confirmar transacci�n
+    -- Actualizar saldo
     UPDATE CUENTA
     SET saldo = saldo - p_monto
     WHERE idUsuario = v_idUsuario;
 
-    -- Cambiar estado de transacci�n a 1 (Exitoso)
+    -- Actualizar estado de transacción
     UPDATE TRANSACCION SET estado = 1 WHERE idTransaccion = v_idTransaccion;
 
+    -- DEVOLVER LA TABLA DE RESULTADOS
+    OPEN p_resultado FOR
+        SELECT 
+            T.idTransaccion AS Folio,
+            U.nombre || ' ' || U.apellidoPaterno || ' ' || U.apellidoMaterno AS Usuario,
+            TJ.NumTarjeta AS Tarjeta_Usada,
+            CASE T.estado 
+                WHEN 1 THEN 'EXITOSO' 
+                ELSE 'PENDIENTE/ERROR' 
+            END AS Status_Transaccion,
+            DT.CantidadEntregada AS Cantidad,
+            D.denominacion AS Denominacion,
+            D.tipo AS Tipo,
+            (D.denominacion * DT.CantidadEntregada) AS Subtotal
+        FROM TRANSACCION T
+        JOIN TARJETA TJ ON T.idTarjeta = TJ.idTarjeta
+        JOIN USUARIO U ON TJ.idUsuario = U.idUsuario
+        JOIN DETALLETRANSACCION DT ON T.idTransaccion = DT.idTransaccion
+        JOIN DENOMINACION D ON DT.idDenominacion = D.idDenominacion
+        WHERE T.idTransaccion = v_idTransaccion;
+
     COMMIT;
-    DBMS_OUTPUT.PUT_LINE('Retiro finalizado con �xito. Cuenta actualizada.');
 
 EXCEPTION
     WHEN EXC_LIMITES_RANGO THEN
         ROLLBACK;
-        raise_application_error(-20001, 'Error: El monto solicitado est� fuera de los l�mites de tu rango (' || v_minRetiro || ' - ' || v_maxRetiro || ').');
+        raise_application_error(-20001, 'Error: Monto fuera de límites (' || v_minRetiro || ' - ' || v_maxRetiro || ').');
         
     WHEN EXC_FONDOS_INSUFICIENTES THEN
         ROLLBACK;
-        raise_application_error(-20002, 'Error: Tu cuenta no cuenta con saldo suficiente para este retiro.');
+        raise_application_error(-20002, 'Error: Saldo insuficiente del usuario.');
         
     WHEN EXC_SIN_EFECTIVO_CAJERO THEN
-        ROLLBACK; -- Deshace los inserts/updates intermedios de billetes y transacciones
-        raise_application_error(-20003, 'Error: El cajero no cuenta con las denominaciones o el efectivo suficiente para completar tu retiro.');
+        ROLLBACK; 
+        raise_application_error(-20003, 'Error: El cajero no cuenta con el efectivo suficiente.');
         
     WHEN NO_DATA_FOUND THEN
         ROLLBACK;
-        raise_application_error(-20004, 'Error: Datos no encontrados. Verifica los IDs de Tarjeta, Cuenta o Cajero.');
+        raise_application_error(-20004, 'Error: Datos no encontrados. Verifica IDs.');
         
     WHEN OTHERS THEN
         ROLLBACK;
@@ -373,4 +379,102 @@ EXCEPTION
 END;
 
 
-EXEC PR_REALIZAR_RETIRO(p_idTarjeta => 2, p_idCajero => 1, p_monto => 1300);
+
+VARIABLE cursor REFCURSOR;
+CALL RetiroSP(p_idTarjeta => 2, p_idCajero => 2, p_monto => 12550, p_resultado => :cursor);
+PRINT cursor;
+
+
+//crear cajero con dinero
+CREATE OR REPLACE PROCEDURE PR_CREAR_CAJERO (
+    p_ubicacion IN VARCHAR2,
+    p_estado    IN VARCHAR2
+)
+AS
+    v_idCajero NUMBER;
+BEGIN
+
+    -- Crear cajero
+    INSERT INTO CAJERO (ubicacion, estado)
+    VALUES (p_ubicacion, p_estado)
+    RETURNING idcajero INTO v_idCajero;
+
+    -- Asignar efectivo inicial = 12,550
+
+    -- 2 billetes de 1000 = 2000
+    INSERT INTO DETALLECAJERO 
+    (idcajero, idDenominacion, cantidadDisponible)
+    VALUES (v_idCajero, 17, 2);
+
+    -- 5 billetes de 500 = 2500
+    INSERT INTO DETALLECAJERO 
+    (idcajero, idDenominacion, cantidadDisponible)
+    VALUES (v_idCajero, 3, 5);
+
+    -- 10 billetes de 200 = 2000
+    INSERT INTO DETALLECAJERO 
+    (idcajero, idDenominacion, cantidadDisponible)
+    VALUES (v_idCajero, 2, 10);
+
+    -- 20 billetes de 100 = 2000
+    INSERT INTO DETALLECAJERO 
+    (idcajero, idDenominacion, cantidadDisponible)
+    VALUES (v_idCajero, 1, 20);
+
+    -- 30 billetes de 50 = 1500
+    INSERT INTO DETALLECAJERO 
+    (idcajero, idDenominacion, cantidadDisponible)
+    VALUES (v_idCajero, 10, 30);
+
+    -- 40 billetes de 20 = 800
+    INSERT INTO DETALLECAJERO 
+    (idcajero, idDenominacion, cantidadDisponible)
+    VALUES (v_idCajero, 9, 40);
+
+    -- 50 monedas de 10 = 500
+    INSERT INTO DETALLECAJERO 
+    (idcajero, idDenominacion, cantidadDisponible)
+    VALUES (v_idCajero, 8, 50);
+
+    -- 100 monedas de 5 = 500
+    INSERT INTO DETALLECAJERO 
+    (idcajero, idDenominacion, cantidadDisponible)
+    VALUES (v_idCajero, 7, 100);
+
+    -- 200 monedas de 2 = 400
+    INSERT INTO DETALLECAJERO 
+    (idcajero, idDenominacion, cantidadDisponible)
+    VALUES (v_idCajero, 6, 200);
+
+    -- 300 monedas de 1 = 300
+    INSERT INTO DETALLECAJERO 
+    (idcajero, idDenominacion, cantidadDisponible)
+    VALUES (v_idCajero, 5, 300);
+
+    -- 100 monedas de 0.5 = 50
+    INSERT INTO DETALLECAJERO 
+    (idcajero, idDenominacion, cantidadDisponible)
+    VALUES (v_idCajero, 4, 100);
+
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Cajero creado correctamente con ID: ' || v_idCajero
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE_APPLICATION_ERROR(
+            -20001,
+            'Error al crear cajero: ' || SQLERRM
+        );
+END;
+
+BEGIN
+    PR_CREAR_CAJERO(
+        'Sucursal Avenida Central',
+        'Activo'
+    );
+END;
+
