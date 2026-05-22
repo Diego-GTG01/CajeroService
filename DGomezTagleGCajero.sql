@@ -175,11 +175,11 @@ INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES 
 INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (3, 5, 300); -- 300 billetes de 200
 INSERT INTO DETALLECAJERO (idcajero, idDenominacion, cantidadDisponible) VALUES (3, 4, 100); -- 200 billetes de 500
 
--- Transacciones (Carlos retira 700 pesos en el Cajero 1 el d�a de hoy)
+-- Transacciones (Carlos retira 700 pesos en el Cajero 1 el d?a de hoy)
 INSERT INTO TRANSACCION (idTarjeta, idCajero, monto, fecha, estado) 
 VALUES (1, 1, 700, SYSDATE, 1); -- Estado 1 = Exitoso
 
--- Detalle de la Transacci�n (C�mo se entregaron los 700 pesos: 1 de 500 y 1 de 200)
+-- Detalle de la Transacci?n (C?mo se entregaron los 700 pesos: 1 de 500 y 1 de 200)
 INSERT INTO DETALLETRANSACCION (idTransaccion, idDenominacion, CantidadEntregada) VALUES (1, 3, 1); -- 1 billete de 500
 INSERT INTO DETALLETRANSACCION (idTransaccion, idDenominacion, CantidadEntregada) VALUES (1, 2, 1); -- 1 billete de 200
 
@@ -190,7 +190,7 @@ SELECT
     U.nombre || ' ' || U.apellidoPaterno AS Cliente,
     B.nombre AS Banco,
     C.NumCuenta,
-    C.saldo AS Saldo_Disponible
+    C.saldo AS SaldoDisponible
 FROM CUENTA C
 JOIN USUARIO U ON C.idUsuario = U.idUsuario
 JOIN BANCO B ON C.idBanco = B.idBanco;
@@ -199,7 +199,7 @@ JOIN BANCO B ON C.idBanco = B.idBanco;
 SELECT 
     C.idCajero,
     C.ubicacion AS Cajero,
-    SUM(D.denominacion * DC.cantidadDisponible) AS Dinero_Total_Disponible
+    SUM(D.denominacion * DC.cantidadDisponible) AS Dinero_TotalDisponible
 FROM DetalleCajero DC
 JOIN CAJERO C ON DC.idcajero = C.idCajero
 JOIN DENOMINACION D ON DC.idDenominacion = D.idDenominacion
@@ -210,11 +210,11 @@ ORDER BY C.idCajero;
 SELECT 
     T.idTransaccion AS Folio,
     U.nombre || ' ' || U.apellidoPaterno AS Cliente,
-    TJ.NumTarjeta AS Tarjeta_Usada,
-    B.nombre AS Banco_Tarjeta,
-    C.ubicacion AS Cajero_Ubicacion,
-    T.monto AS Monto_Retirado,
-    TO_CHAR(T.fecha, 'DD/MM/YYYY HH24:MI') AS Fecha_Hora
+    TJ.NumTarjeta AS TarjetaUsada,
+    B.nombre AS BancoTarjeta,
+    C.ubicacion AS CajeroUbicacion,
+    T.monto AS MontoRetirado,
+    TO_CHAR(T.fecha, 'DD/MM/YYYY HH24:MI') AS FechaHora
 FROM TRANSACCION T
 JOIN TARJETA TJ ON T.idTarjeta = TJ.idTarjeta
 JOIN USUARIO U ON TJ.idUsuario = U.idUsuario
@@ -246,24 +246,24 @@ ORDER BY C.ubicacion, D.denominacion DESC;
 
 //stored procedure
 CREATE OR REPLACE PROCEDURE RetiroSP (
-    p_idTarjeta   IN NUMBER,
-    p_idCajero    IN NUMBER,
-    p_monto       IN NUMBER,
-    p_resultado   OUT SYS_REFCURSOR
+    PidTarjeta   IN NUMBER,
+    PidCajero    IN NUMBER,
+    Pmonto       IN NUMBER,
+    Presultado   OUT SYS_REFCURSOR
 ) AS
-    v_idUsuario       NUMBER;
-    v_saldoActual     NUMBER;
-    v_minRetiro       NUMBER;
-    v_maxRetiro       NUMBER;
-    v_idTransaccion   NUMBER;
-    v_montoRestante   NUMBER;
-    v_piezasEntregar  NUMBER;
+    VidUsuario       NUMBER;
+    VsaldoActual     NUMBER;
+    VminRetiro       NUMBER;
+    VmaxRetiro       NUMBER;
+    VidTransaccion   NUMBER;
+    VmontoRestante   NUMBER;
+    VpiezasEntregar  NUMBER;
     
-    CURSOR c_denominaciones IS
+    CURSOR Cdenominaciones IS
         SELECT dc.idDenominacion, d.denominacion, dc.cantidadDisponible
         FROM DetalleCajero dc
         JOIN DENOMINACION d ON dc.idDenominacion = d.idDenominacion
-        WHERE dc.idcajero = p_idCajero AND dc.cantidadDisponible > 0
+        WHERE dc.idcajero = PidCajero AND dc.cantidadDisponible > 0
         ORDER BY d.denominacion DESC;
 
     EXC_FONDOS_INSUFICIENTES EXCEPTION;
@@ -272,77 +272,78 @@ CREATE OR REPLACE PROCEDURE RetiroSP (
 BEGIN
     -- Obtener datos de la tarjeta
     SELECT t.idUsuario, r.minRetiro, r.maxRetiro
-    INTO v_idUsuario, v_minRetiro, v_maxRetiro
+    INTO VidUsuario, VminRetiro, VmaxRetiro
     FROM TARJETA t
     JOIN RANGO r ON t.idRango = r.idRango
-    WHERE t.idTarjeta = p_idTarjeta AND t.STATUS = 1;
+    WHERE t.idTarjeta = PidTarjeta AND t.STATUS = 1;
 
     -- Verificar límites de la tarjeta 
-    IF p_monto <= v_minRetiro OR p_monto >= v_maxRetiro THEN
+    IF Pmonto <= VminRetiro OR Pmonto >= VmaxRetiro THEN
         RAISE EXC_LIMITES_RANGO;
     END IF;
 
     --Verificar saldo del usuario
-    SELECT saldo INTO v_saldoActual
+    SELECT saldo INTO VsaldoActual
     FROM CUENTA
-    WHERE idUsuario = v_idUsuario;
+    WHERE idUsuario = VidUsuario;
 
-    IF v_saldoActual < p_monto THEN
+    IF VsaldoActual < Pmonto THEN
         RAISE EXC_FONDOS_INSUFICIENTES;
     END IF;
 
     --Registrar la transacción inicial
     INSERT INTO TRANSACCION (idTarjeta, idCajero, monto, fecha, estado)
-    VALUES (p_idTarjeta, p_idCajero, p_monto, SYSDATE, 0)
-    RETURNING idTransaccion INTO v_idTransaccion;
+    VALUES (PidTarjeta, PidCajero, Pmonto, SYSDATE, 0)
+    RETURNING idTransaccion INTO VidTransaccion;
 
     -- ALGORITMO DE DESGLOSE DE EFECTIVO
-    v_montoRestante := p_monto;
+    VmontoRestante := Pmonto;
     
-    FOR rec IN c_denominaciones LOOP
-        IF v_montoRestante >= rec.denominacion THEN
-            v_piezasEntregar := TRUNC(v_montoRestante / rec.denominacion);
+    FOR rec IN Cdenominaciones LOOP
+        IF VmontoRestante >= rec.denominacion THEN
+            VpiezasEntregar := TRUNC(VmontoRestante / rec.denominacion);
             
-            IF v_piezasEntregar > rec.cantidadDisponible THEN
-                v_piezasEntregar := rec.cantidadDisponible;
+            IF VpiezasEntregar > rec.cantidadDisponible THEN
+                VpiezasEntregar := rec.cantidadDisponible;
             END IF;
             
-            IF v_piezasEntregar > 0 THEN
+            IF VpiezasEntregar > 0 THEN
                 INSERT INTO DETALLETRANSACCION (idTransaccion, idDenominacion, CantidadEntregada)
-                VALUES (v_idTransaccion, rec.idDenominacion, v_piezasEntregar);
+                VALUES (VidTransaccion, rec.idDenominacion, VpiezasEntregar);
                 
                 UPDATE DetalleCajero
-                SET cantidadDisponible = cantidadDisponible - v_piezasEntregar
-                WHERE idcajero = p_idCajero AND idDenominacion = rec.idDenominacion;
+                SET cantidadDisponible = cantidadDisponible - VpiezasEntregar
+                WHERE idcajero = PidCajero AND idDenominacion = rec.idDenominacion;
                 
-                v_montoRestante := v_montoRestante - (v_piezasEntregar * rec.denominacion);
+                VmontoRestante := VmontoRestante - (VpiezasEntregar * rec.denominacion);
             END IF;
         END IF;
     END LOOP;
 
     -- VALIDACIÓN FINAL DE SALDO DEL CAJERO 
-    IF v_montoRestante > 0 THEN
+    IF VmontoRestante > 0 THEN
         RAISE EXC_SIN_EFECTIVO_CAJERO;
     END IF;
 
     -- Actualizar saldo
     UPDATE CUENTA
-    SET saldo = saldo - p_monto
-    WHERE idUsuario = v_idUsuario;
+    SET saldo = saldo - Pmonto
+    WHERE idUsuario = VidUsuario;
 
     -- Actualizar estado de transacción
-    UPDATE TRANSACCION SET estado = 1 WHERE idTransaccion = v_idTransaccion;
+    UPDATE TRANSACCION SET estado = 1 WHERE idTransaccion = VidTransaccion;
 
     -- DEVOLVER LA TABLA DE RESULTADOS
-    OPEN p_resultado FOR
+    OPEN Presultado FOR
         SELECT 
             T.idTransaccion AS Folio,
             U.nombre || ' ' || U.apellidoPaterno || ' ' || U.apellidoMaterno AS Usuario,
-            TJ.NumTarjeta AS Tarjeta_Usada,
+            CU.NumCuenta As NumeroCuenta,
+            TJ.NumTarjeta AS TarjetaUsada,
             CASE T.estado 
                 WHEN 1 THEN 'EXITOSO' 
                 ELSE 'PENDIENTE/ERROR' 
-            END AS Status_Transaccion,
+            END AS StatusTransaccion,
             DT.CantidadEntregada AS Cantidad,
             D.denominacion AS Denominacion,
             D.tipo AS Tipo,
@@ -350,16 +351,17 @@ BEGIN
         FROM TRANSACCION T
         JOIN TARJETA TJ ON T.idTarjeta = TJ.idTarjeta
         JOIN USUARIO U ON TJ.idUsuario = U.idUsuario
+        JOIN CUENTA CU ON U.idUsuario = CU.idUsuario
         JOIN DETALLETRANSACCION DT ON T.idTransaccion = DT.idTransaccion
         JOIN DENOMINACION D ON DT.idDenominacion = D.idDenominacion
-        WHERE T.idTransaccion = v_idTransaccion;
+        WHERE T.idTransaccion = VidTransaccion;
 
     COMMIT;
 
 EXCEPTION
     WHEN EXC_LIMITES_RANGO THEN
         ROLLBACK;
-        raise_application_error(-20001, 'Error: Monto fuera de límites (' || v_minRetiro || ' - ' || v_maxRetiro || ').');
+        raise_application_error(-20001, 'Error: Monto fuera de límites (' || VminRetiro || ' - ' || VmaxRetiro || ').');
         
     WHEN EXC_FONDOS_INSUFICIENTES THEN
         ROLLBACK;
@@ -381,7 +383,7 @@ END;
 
 
 VARIABLE cursor REFCURSOR;
-CALL RetiroSP(p_idTarjeta => 2, p_idCajero => 2, p_monto => 12550, p_resultado => :cursor);
+CALL RetiroSP(PidTarjeta => 2, PidCajero => 21, Pmonto => 2550, Presultado => :cursor);
 PRINT cursor;
 
 
@@ -457,10 +459,6 @@ BEGIN
     VALUES (v_idCajero, 4, 100);
 
     COMMIT;
-
-    DBMS_OUTPUT.PUT_LINE(
-        'Cajero creado correctamente con ID: ' || v_idCajero
-    );
 
 EXCEPTION
     WHEN OTHERS THEN
