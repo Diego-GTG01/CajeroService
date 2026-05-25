@@ -4,6 +4,7 @@ public class Cajero {
     private int idCajero;
     private String ubicacion;
     private String estado;
+    private double total;
 
     public int getIdCajero() {
         return idCajero;
@@ -27,6 +28,13 @@ public class Cajero {
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+
+    public double getTotal() {
+        return total;
+    }
+    public void setTotal(double total) {
+        this.total = total;
     }
     
     
