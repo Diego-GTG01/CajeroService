@@ -1,7 +1,9 @@
 package com.risosuit.CajeroService.ML;
+
 import java.util.Date;
 
 public class Tarjeta {
+
     private int idTarjeta;
     private Usuario usuario;
     private Rango rango;
@@ -10,6 +12,13 @@ public class Tarjeta {
     private String pin;
     private Date fechaVencimiento;
     private int status;
+
+    public Tarjeta() {
+        usuario = new Usuario();
+        banco = new Banco();
+        rango = new Rango();
+
+    }
 
     public int getIdTarjeta() {
         return idTarjeta;
@@ -66,7 +75,6 @@ public class Tarjeta {
     public void setFechaVencimiento(Date fechaVencimiento) {
         this.fechaVencimiento = fechaVencimiento;
     }
-
 
     public int getStatus() {
         return status;
