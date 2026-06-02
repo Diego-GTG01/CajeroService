@@ -5,7 +5,7 @@ import com.risosuit.CajeroService.ML.Result;
 public interface ICajero {
     Result getAllCajeros();
     Result getCajeroById(int idCajero);
-    Result createCajero(String nombre, String ubicacion, int idBanco);
+    Result createCajero(String ubicacion, String estado);
     Result deleteCajero(int id);
 
 }

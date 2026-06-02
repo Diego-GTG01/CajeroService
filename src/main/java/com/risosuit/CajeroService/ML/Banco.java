@@ -1,8 +1,17 @@
 package com.risosuit.CajeroService.ML;
 
 public class Banco {
+
     private int idBanco;
     private String nombre;
+
+    public Banco() {
+    }
+
+    public Banco(int idBanco, String nombre) {
+        this.idBanco = idBanco;
+        this.nombre = nombre;
+    }
 
     public int getIdBanco() {
         return idBanco;

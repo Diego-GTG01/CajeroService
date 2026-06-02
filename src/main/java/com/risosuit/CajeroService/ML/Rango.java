@@ -8,6 +8,18 @@ public class Rango {
     private String nombre;
     private int minRetiro;
     private int maxRetiro;
+    
+    public Rango(){}
+
+    public Rango(int idRango, String nombre, int minRetiro, int maxRetiro) {
+        this.idRango = idRango;
+        this.nombre = nombre;
+        this.minRetiro = minRetiro;
+        this.maxRetiro = maxRetiro;
+    }
+    
+    
+    
 
     public int getIdRango() {
         return idRango;

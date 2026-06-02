@@ -1,10 +1,12 @@
 package com.risosuit.CajeroService.DAO;
 
+import com.risosuit.CajeroService.DTO.CreateClienteRequest;
 import com.risosuit.CajeroService.DTO.UsuarioCompletoDTO;
 import com.risosuit.CajeroService.ML.Result;
 import com.risosuit.CajeroService.ML.Usuario;
 import com.risosuit.CajeroService.ML.Tarjeta;
 import com.risosuit.CajeroService.ML.Cuenta;
+import java.util.Map;
 
 public interface IUsuario {
     Result<UsuarioCompletoDTO> getUsuarioByTarjeta(String NumTarjeta);
@@ -13,4 +15,5 @@ public interface IUsuario {
     Result<Usuario> createUsuario(String email, String password, String NumTarjeta);
     Result<Tarjeta> getTarjetaByNumero(String numTarjeta);
     Result<Cuenta> getCuentaByUsuarioId(int idUsuario);
+    Result<CreateClienteRequest> createUsuario(CreateClienteRequest request);
 }

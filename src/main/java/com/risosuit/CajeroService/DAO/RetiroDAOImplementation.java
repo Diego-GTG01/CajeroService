@@ -26,7 +26,7 @@ public class RetiroDAOImplementation implements IRetiro {
         try {
             jdbcTemplate.execute("{CALL RetiroSP(?,?,?,?)}",
                     (CallableStatementCallback<Boolean>) callableStatement -> {
-                        callableStatement.setString(1, tarjeta.getNumTarjeta()); // Ahora recibe String (NumTarjeta)
+                        callableStatement.setString(1, tarjeta.getNumTarjeta()); 
                         callableStatement.setInt(2, idCajero);
                         callableStatement.setDouble(3, monto);
                         callableStatement.registerOutParameter(4, OracleTypes.REF_CURSOR);

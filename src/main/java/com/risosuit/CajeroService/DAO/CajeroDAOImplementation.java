@@ -18,7 +18,6 @@ public class CajeroDAOImplementation implements ICajero {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
-    
 
     @Override
     public Result getAllCajeros() {
@@ -37,7 +36,7 @@ public class CajeroDAOImplementation implements ICajero {
                     cajeroActual.setTotal(rs.getDouble("TOTAL"));
                     cajeroActual.setEstado(rs.getString("ESTADO"));
                     cajeros.add(cajeroActual);
-                    
+
                 }
                 result.objects = new ArrayList<>(cajeros);
                 return null;
@@ -49,7 +48,7 @@ public class CajeroDAOImplementation implements ICajero {
             result.message = ex.getLocalizedMessage();
             result.ex = ex;
         }
-        
+
         return result;
     }
 
@@ -59,13 +58,54 @@ public class CajeroDAOImplementation implements ICajero {
     }
 
     @Override
-    public Result createCajero(String nombre, String ubicacion, int idBanco) {
-        return null;
+    public Result createCajero(String ubicacion, String estado) {
+        Result result = new Result();
+        try {
+            jdbcTemplate.execute("{CALL AddCajeroSP(?,?)}", (CallableStatementCallback<Boolean>) callablestatement -> {
+                callablestatement.setString(1, ubicacion);
+                callablestatement.setString(2, "Activo");
+
+                if (callablestatement.executeUpdate() > 0) {
+                    result.correct = true;
+                    result.message = "Creacion exitosa";
+                } else {
+                    result.correct = false;
+                    result.message = "Algo salió mal";
+                }
+
+                return true;
+            });
+            return result;
+
+        } catch (Exception e) {
+            result.correct = false;
+            result.message = e.getLocalizedMessage();
+            result.ex = e;
+            return result;
+        }
     }
 
     @Override
     public Result deleteCajero(int id) {
-        return null;
+        Result result = new Result();
+        try {
+            jdbcTemplate.execute("{CALL deleteCajeroSP(?)}", (CallableStatementCallback<Boolean>) callablestatement -> {
+                callablestatement.setInt(1, id);
+                if (callablestatement.executeUpdate() > 0) {
+                    result.correct = true;
+                    result.message = "Cajero Eliminado";
+                }
+
+                return true;
+            });
+            return result;
+
+        } catch (Exception e) {
+            result.correct = false;
+            result.message = e.getLocalizedMessage();
+            result.ex = e;
+            return result;
+        }
     }
 
 }

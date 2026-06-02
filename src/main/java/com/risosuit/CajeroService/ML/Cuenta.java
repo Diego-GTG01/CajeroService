@@ -1,11 +1,14 @@
 package com.risosuit.CajeroService.ML;
 
+
 public class Cuenta {
     private int idCuenta;
+    
     private Usuario usuario;
     private Banco banco;
     private long NumCuenta;
     private float saldo;
+    
 
     public int getIdCuenta() {
         return idCuenta;

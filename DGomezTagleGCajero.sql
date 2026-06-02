@@ -444,7 +444,7 @@ EXCEPTION
 END RetiroSP;
 /
 -- PROCEDIMIENTO PARA CREAR CAJERO CON DINERO
-CREATE OR REPLACE PROCEDURE PR_CREAR_CAJERO (
+CREATE OR REPLACE PROCEDURE AddCajeroSP (
     p_ubicacion IN VARCHAR2,
     p_estado    IN VARCHAR2
 )
@@ -501,7 +501,7 @@ EXCEPTION
     WHEN OTHERS THEN
         ROLLBACK;
         RAISE_APPLICATION_ERROR(-20001, 'Error al crear cajero: ' || SQLERRM);
-END PR_CREAR_CAJERO;
+END AddCajeroSP;
 /
 
 
@@ -525,7 +525,7 @@ PRINT cursor_resultado;
 
 -- EJEMPLO DE CREACIÓN DE CAJERO
 BEGIN
-    PR_CREAR_CAJERO(
+    AddCajeroSP(
         p_ubicacion => 'Sucursal Nueva',
         p_estado => 'Activo'
     );
@@ -644,3 +644,71 @@ END GetByNumTarjeta;
 VARIABLE cursor REFCURSOR;
 CALL GetByNumTarjeta(PNumTarjeta => '8765432187654321', PCursor => :cursor);
 PRINT cursor;
+
+
+
+CREATE OR REPLACE PROCEDURE deleteCajeroSP(
+    PidCajero IN NUMBER
+) AS
+BEGIN
+    DELETE FROM DETALLECAJERO WHERE idCajero = PidCajero;    
+    DELETE FROM CAJERO WHERE idCajero = PidCajero;
+    
+    COMMIT;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE_APPLICATION_ERROR(-20001, 'Error al eliminar el cajero: ' || SQLERRM);
+END deleteCajeroSP;
+
+
+CALL deleteCajeroSP(PidCajero => 24);
+
+
+//getAll Bancos
+CREATE OR REPLACE PROCEDURE GetAllBancoSP(
+    PCURSOR OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN PCURSOR FOR
+    SELECT IDBANCO, NOMBRE FROM BANCO;      
+    
+END GetAllBancoSP;                          
+
+VARIABLE cursor REFCURSOR;
+CALL GetAllBancoSP(PCURSOR => :cursor);
+PRINT cursor;
+
+
+//get all Rango
+CREATE OR REPLACE PROCEDURE GetAllRangoSP(
+    PCURSOR OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN PCURSOR FOR
+    SELECT IDRANGO, NOMBRE, MINRETIRO, MAXRETIRO FROM RANGO;      
+    
+END GetAllRangoSP;                          
+
+VARIABLE cursor REFCURSOR;
+CALL GetAllRangoSP(PCURSOR => :cursor);
+PRINT cursor;
+
+
+//CREAR USUARIO
+
+
+CREATE OR REPLACE PROCEDURE addUser(
+    pNombreUsuario IN VARCHAR,
+    pApellidoPaterno IN VARCHAR,
+    pApellidoMaterno IN VARCHAR,
+    pCelular IN VARCHAR, 
+    pTelefono IN VARCHAR,
+    pEmail IN VARCHAR,
+    pIdBanco IN VARCHAR,
+    pIdTarjeta IN VARCHAR,
+    pSaldo IN VARCHAR,
+    pPin IN VARCHAR,
+    pCursor OUT SYS_REFCURSOR
+)

@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.risosuit.CajeroService.DAO.UsuarioDAOImplementation;
+import com.risosuit.CajeroService.DTO.CreateClienteRequest;
 import com.risosuit.CajeroService.DTO.UsuarioCompletoDTO;
 import com.risosuit.CajeroService.ML.Result;
 import com.risosuit.CajeroService.ML.Usuario;
@@ -95,39 +96,34 @@ public class UsuarioRestController {
         }
     }
 
-    @PostMapping("")
-    public ResponseEntity<Result> createUsuario(@RequestBody Map<String, String> request) {
-        Result result = new Result();
-        try {
-            String email = request.get("email");
-            String password = request.get("password");
-            String numTarjeta = request.get("numTarjeta");
-
-            if (email == null || password == null) {
+        @PostMapping("create")
+        public ResponseEntity<Result> createUsuario(@RequestBody CreateClienteRequest request) {
+            Result result = new Result();
+            Usuario usuario = (Usuario) request.getUsuario();
+            Cuenta cuenta  = (Cuenta) request.getCuenta();
+            Tarjeta tarjeta = (Tarjeta) request.getTarjeta();
+            
+            CreateClienteRequest clienteRequest = new CreateClienteRequest(usuario, cuenta, tarjeta);
+            
+            try {
+                Result<CreateClienteRequest> daoResult = usuarioDAO.createUsuario(clienteRequest);
+                if (daoResult.correct) {
+                    result.correct = true;
+                    result.object = daoResult.object;
+                    result.message = daoResult.message;
+                    return ResponseEntity.status(HttpStatus.CREATED).body(result);
+                } else {
+                    result.correct = false;
+                    result.message = daoResult.message;
+                    return ResponseEntity.badRequest().body(result);
+                }
+            } catch (Exception e) {
                 result.correct = false;
-                result.message = "Email y password son requeridos";
-                return ResponseEntity.badRequest().body(result);
+                result.message = "Error al crear usuario: " + e.getMessage();
+                result.ex = e;
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
             }
-
-            Result<Usuario> daoResult = usuarioDAO.createUsuario(email, password, numTarjeta);
-
-            if (daoResult.correct) {
-                result.correct = true;
-                result.object = daoResult.object;
-                result.message = daoResult.message;
-                return ResponseEntity.status(HttpStatus.CREATED).body(result);
-            } else {
-                result.correct = false;
-                result.message = daoResult.message;
-                return ResponseEntity.badRequest().body(result);
-            }
-        } catch (Exception e) {
-            result.correct = false;
-            result.message = "Error al crear usuario: " + e.getMessage();
-            result.ex = e;
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
         }
-    }
 
     @GetMapping("/tarjeta/{numTarjeta}")
     public ResponseEntity<Result> getTarjetaByNumero(@PathVariable String numTarjeta) {
