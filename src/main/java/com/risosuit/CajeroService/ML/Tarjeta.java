@@ -1,6 +1,8 @@
 package com.risosuit.CajeroService.ML;
 
 import java.util.Date;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Tarjeta {
 
@@ -8,16 +10,17 @@ public class Tarjeta {
     private Usuario usuario;
     private Rango rango;
     private Banco banco;
-    private String NumTarjeta;
+    
+    // Cambiado a minúscula para seguir el estándar camelCase
+    private String numTarjeta; 
     private String pin;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private Date fechaVencimiento;
     private int status;
 
+    // 1. EL CONSTRUCTOR DEBE QUEDAR COMPLETAMENTE VACÍO
     public Tarjeta() {
-        usuario = new Usuario();
-        banco = new Banco();
-        rango = new Rango();
-
     }
 
     public int getIdTarjeta() {
@@ -52,12 +55,13 @@ public class Tarjeta {
         this.banco = banco;
     }
 
+    @JsonProperty("NumTarjeta") 
     public String getNumTarjeta() {
-        return NumTarjeta;
+        return numTarjeta;
     }
 
-    public void setNumTarjeta(String NumTarjeta) {
-        this.NumTarjeta = NumTarjeta;
+    public void setNumTarjeta(String numTarjeta) {
+        this.numTarjeta = numTarjeta;
     }
 
     public String getPin() {
@@ -83,5 +87,4 @@ public class Tarjeta {
     public void setStatus(int status) {
         this.status = status;
     }
-
 }

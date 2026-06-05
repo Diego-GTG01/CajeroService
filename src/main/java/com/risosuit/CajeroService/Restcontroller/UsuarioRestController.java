@@ -257,6 +257,7 @@ public class UsuarioRestController {
                 UsuarioCompletoDTO usuario = daoResult.object;
 
                 Map<String, Object> saldoInfo = new HashMap<>();
+                saldoInfo.put("idUsuario", usuario.getIdUsuario());
                 saldoInfo.put("numTarjeta", usuario.getNumTarjeta());
                 saldoInfo.put("numCuenta", usuario.getNumCuenta());
                 saldoInfo.put("saldo", usuario.getSaldo());
