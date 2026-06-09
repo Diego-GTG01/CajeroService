@@ -1,16 +1,20 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.risosuit.CajeroService.ML;
-/**
- *
- * @author ALIEN62
- */
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(name = "DetalleCajero", description = "Representa el inventario de efectivo disponible en un cajero automático para una denominación específica.")
 public class DetalleCajero {
+
+    @Schema(description = "Identificador único del detalle de inventario", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
     private int idDetalleCajero;
+
+    @Schema(description = "Cajero al que pertenece el inventario")
     private Cajero cajero;
+
+    @Schema(description = "Denominación de efectivo almacenada en el cajero")
     private Denominacion denominacion;
+
+    @Schema(description = "Cantidad disponible de piezas para esta denominación", example = "150")
     private int cantidadDisponible;
 
     public int getIdDetalleCajero() {
@@ -44,6 +48,5 @@ public class DetalleCajero {
     public void setCantidadDisponible(int cantidadDisponible) {
         this.cantidadDisponible = cantidadDisponible;
     }
-    
-    
+
 }

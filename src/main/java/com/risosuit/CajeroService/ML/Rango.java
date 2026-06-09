@@ -1,15 +1,24 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.risosuit.CajeroService.ML;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(name = "Rango", description = "Representa una categoría de cuenta o cliente que define los límites mínimos y máximos permitidos para realizar retiros.")
 public class Rango {
+
+    @Schema(description = "Identificador único del rango", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
     private int idRango;
+
+    @Schema(description = "Nombre del rango asignado al cliente o cuenta", example = "Clásica")
     private String nombre;
+
+    @Schema(description = "Monto mínimo permitido por retiro", example = "100")
     private int minRetiro;
+
+    @Schema(description = "Monto máximo permitido por retiro", example = "5000")
     private int maxRetiro;
-    
-    public Rango(){}
+
+    public Rango() {
+    }
 
     public Rango(int idRango, String nombre, int minRetiro, int maxRetiro) {
         this.idRango = idRango;
@@ -17,9 +26,6 @@ public class Rango {
         this.minRetiro = minRetiro;
         this.maxRetiro = maxRetiro;
     }
-    
-    
-    
 
     public int getIdRango() {
         return idRango;
@@ -52,6 +58,5 @@ public class Rango {
     public void setMaxRetiro(int maxRetiro) {
         this.maxRetiro = maxRetiro;
     }
-    
-    
+
 }

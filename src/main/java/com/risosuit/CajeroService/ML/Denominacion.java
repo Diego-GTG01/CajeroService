@@ -1,15 +1,21 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package com.risosuit.CajeroService.ML;
-/**
- *
- * @author ALIEN62
- */
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(name = "Denominacion", description = "Representa una denominación monetaria disponible en el sistema, ya sea billete o moneda.")
 public class Denominacion {
+
+    @Schema(description = "Identificador único de la denominación", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
     private int idDenominacion;
+
+    @Schema(description = "Tipo de denominación", example = "Billete", allowableValues = {
+            "Billete",
+            "Moneda"
+    })
     private String tipo;
+
+    @Schema(description = "Valor monetario de la denominación", example = "200")
     private float denominacion;
 
     public int getIdDenominacion() {
@@ -35,6 +41,5 @@ public class Denominacion {
     public void setDenominacion(float denominacion) {
         this.denominacion = denominacion;
     }
-    
-    
+
 }
