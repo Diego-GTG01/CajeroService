@@ -25,10 +25,10 @@ import oracle.jdbc.OracleTypes;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Map;
+
 
 @Repository
-public class UsuarioDAOImplementation implements IUsuario {
+public class  UsuarioDAOImplementation implements IUsuario {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;

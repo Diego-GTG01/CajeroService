@@ -1,32 +1,38 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.risosuit.CajeroService.DTO;
 
 import com.risosuit.CajeroService.ML.Cuenta;
 import com.risosuit.CajeroService.ML.Tarjeta;
 import com.risosuit.CajeroService.ML.Usuario;
 
-/**
- *
- * @author ALIEN62
- */
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(name = "CreateClienteRequest", description = """
+        Objeto utilizado para registrar un nuevo cliente en el sistema.
+
+        Incluye:
+        - Información personal del usuario.
+        - Información de la cuenta bancaria.
+        - Información de la tarjeta asociada.
+        """)
 public class CreateClienteRequest {
 
+    @Schema(description = "Datos personales del cliente", requiredMode = Schema.RequiredMode.REQUIRED)
     private Usuario usuario;
+
+    @Schema(description = "Información de la cuenta bancaria del cliente", requiredMode = Schema.RequiredMode.REQUIRED)
     private Cuenta cuenta;
+
+    @Schema(description = "Información de la tarjeta asociada al cliente", requiredMode = Schema.RequiredMode.REQUIRED)
     private Tarjeta tarjeta;
-    
-    public CreateClienteRequest(){}
+
+    public CreateClienteRequest() {
+    }
 
     public CreateClienteRequest(Usuario usuario, Cuenta cuenta, Tarjeta tarjeta) {
         this.usuario = usuario;
         this.cuenta = cuenta;
         this.tarjeta = tarjeta;
     }
-    
-    
 
     public Usuario getUsuario() {
         return usuario;
